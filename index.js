@@ -76,10 +76,6 @@ class SlabServer {
         switch (name) {
           case "slab_search":
             return await this.searchPosts(args.query, args.limit || 10);
-          case "slab_get_post":
-            return await this.getPost(args.postId);
-          case "slab_list_recent_posts":
-            return await this.listRecentPosts(args.limit || 10);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
