@@ -15,103 +15,121 @@ echo "║     Simple Slab Integration Setup              ║"
 echo "╚════════════════════════════════════════════════╝"
 echo ""
 
-# Function to install Node.js
-install_node() {
-    echo -e "${YELLOW}ℹ${NC}  Node.js is not installed. Installing now..."
+# Function to install Homebrew
+install_homebrew() {
+    echo -e "${YELLOW}ℹ${NC}  Installing Homebrew..."
     
-    # Check if Homebrew is installed
-    if command -v brew >/dev/null 2>&1; then
-        echo "Using Homebrew to install Node.js..."
-        brew install node
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✓${NC} Node.js installed successfully via Homebrew"
-            # Reload PATH
-            export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+    # Install Homebrew using the official installer
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓${NC} Homebrew installed successfully"
+        
+        # Add Homebrew to PATH for current session
+        # Check for Apple Silicon vs Intel paths
+        if [ -d "/opt/homebrew" ]; then
+            # Apple Silicon
+            export PATH="/opt/homebrew/bin:$PATH"
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            # Intel
+            export PATH="/usr/local/bin:$PATH"
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+        
+        # Verify Homebrew is working
+        if command -v brew >/dev/null 2>&1; then
+            echo -e "${GREEN}✓${NC} Homebrew is ready to use"
             return 0
         else
-            echo -e "${RED}✗${NC} Homebrew installation failed"
-        fi
-    fi
-    
-    # If Homebrew isn't available or failed, download directly
-    echo "Downloading Node.js LTS installer..."
-    
-    # Detect CPU architecture
-    ARCH=$(uname -m)
-    if [ "$ARCH" = "arm64" ]; then
-        # Apple Silicon
-        PLATFORM="darwin-arm64"
-    else
-        # Intel
-        PLATFORM="darwin-x64"
-    fi
-    
-    # Use latest-lts symlink to always get current LTS
-    NODE_URL="https://nodejs.org/dist/latest-lts/node-latest-lts-$PLATFORM.tar.gz"
-    
-    # Download and extract to /usr/local
-    TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR"
-    
-    echo "Downloading latest Node.js LTS for $ARCH architecture..."
-    if curl -L -o node.tar.gz "$NODE_URL" --progress-bar; then
-        echo -e "${GREEN}✓${NC} Download complete"
-        
-        echo "Installing Node.js (you may be prompted for your password)..."
-        tar -xzf node.tar.gz
-        
-        # Get the extracted directory name (it varies with version)
-        NODE_DIR=$(tar -tzf node.tar.gz | head -1 | cut -f1 -d"/")
-        
-        # Install to /usr/local (requires sudo)
-        sudo cp -R "$NODE_DIR"/* /usr/local/
-        
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✓${NC} Node.js installed successfully"
-            cd - > /dev/null
-            rm -rf "$TEMP_DIR"
-            
-            # Update PATH
-            export PATH="/usr/local/bin:$PATH"
-            
-            # Verify installation
-            if command -v node >/dev/null 2>&1; then
-                NODE_VERSION=$(node --version 2>/dev/null)
-                echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is now installed"
-                return 0
-            fi
-        else
-            echo -e "${RED}✗${NC} Failed to install Node.js"
-            cd - > /dev/null
-            rm -rf "$TEMP_DIR"
-            return 1
+            echo -e "${YELLOW}⚠${NC}  Homebrew installed but not in PATH"
+            echo "   You may need to restart your terminal"
         fi
     else
-        echo -e "${RED}✗${NC} Failed to download Node.js"
-        cd - > /dev/null
-        rm -rf "$TEMP_DIR"
+        echo -e "${RED}✗${NC} Failed to install Homebrew"
         return 1
     fi
 }
 
-# Check if Node.js is available
-echo "Checking prerequisites..."
-if command -v node >/dev/null 2>&1; then
-    NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
-    echo -e "${GREEN}✓${NC} Node.js is installed (version $NODE_VERSION)"
-else
-    # Auto-install Node.js
-    install_node
+# Function to install Node.js via Homebrew
+install_node_via_homebrew() {
+    echo -e "${YELLOW}ℹ${NC}  Installing Node.js via Homebrew..."
     
-    # Check again after installation
-    if ! command -v node >/dev/null 2>&1; then
-        echo -e "${RED}✗${NC} Node.js installation failed"
+    brew install node
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓${NC} Node.js installed successfully"
+        
+        # Verify Node is available
+        if command -v node >/dev/null 2>&1; then
+            NODE_VERSION=$(node --version 2>/dev/null)
+            echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is ready"
+            return 0
+        else
+            echo -e "${YELLOW}⚠${NC}  Node installed but not found in PATH"
+            # Try to source the shell environment again
+            if [ -d "/opt/homebrew" ]; then
+                eval "$(/opt/homebrew/bin/brew shellenv)"
+            else
+                eval "$(/usr/local/bin/brew shellenv)"
+            fi
+        fi
+    else
+        echo -e "${RED}✗${NC} Failed to install Node.js via Homebrew"
+        return 1
+    fi
+}
+
+echo "Checking prerequisites..."
+
+# Step 1: Check and install Homebrew if needed
+if ! command -v brew >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠${NC}  Homebrew is not installed"
+    install_homebrew
+    
+    # Verify Homebrew installation succeeded
+    if ! command -v brew >/dev/null 2>&1; then
+        echo -e "${RED}✗${NC} Cannot proceed without Homebrew"
         echo ""
-        echo "Please install Node.js manually from https://nodejs.org"
+        echo "Please install Homebrew manually:"
+        echo "https://brew.sh"
+        echo ""
         echo "Then run this installer again."
         exit 1
     fi
+else
+    echo -e "${GREEN}✓${NC} Homebrew is installed"
+    
+    # Make sure Homebrew is in PATH
+    if [ -d "/opt/homebrew" ]; then
+        export PATH="/opt/homebrew/bin:$PATH"
+        eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null
+    else
+        export PATH="/usr/local/bin:$PATH"
+        eval "$(/usr/local/bin/brew shellenv)" 2>/dev/null
+    fi
 fi
+
+# Step 2: Check and install Node.js via Homebrew
+if ! command -v node >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠${NC}  Node.js is not installed"
+    install_node_via_homebrew
+    
+    # Verify Node installation succeeded
+    if ! command -v node >/dev/null 2>&1; then
+        echo -e "${RED}✗${NC} Node.js installation failed"
+        echo ""
+        echo "Please try running:"
+        echo "  brew install node"
+        echo ""
+        echo "Then run this installer again."
+        exit 1
+    fi
+else
+    NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
+    echo -e "${GREEN}✓${NC} Node.js is installed (version $NODE_VERSION)"
+fi
+
 echo ""
 
 # Get Slab token
