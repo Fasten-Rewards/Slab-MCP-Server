@@ -18,7 +18,9 @@ echo ""
 # Function to install Node.js via Homebrew
 install_node_via_homebrew() {
     echo -e "${YELLOW}ℹ${NC}  Installing Node.js via Homebrew..."
-    brew install node
+
+    # Run brew in a subshell so it can't interfere with stdin/heredocs later
+    ( brew install node )
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓${NC} Node.js installed successfully"
