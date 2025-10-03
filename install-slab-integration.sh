@@ -25,7 +25,8 @@ else
     echo "   You'll need Node.js for the integration to work."
     echo "   Install it from https://nodejs.org if you haven't already."
     echo ""
-    read -p "Continue anyway? (y/n): " -n 1 -r
+    # Fix for curl | bash - read from terminal
+    read -p "Continue anyway? (y/n): " -n 1 -r < /dev/tty
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Installation cancelled."
@@ -37,7 +38,9 @@ echo ""
 # Get Slab token
 echo "Enter your Slab API Token"
 echo ""
-read -p "Slab API Token: " SLAB_TOKEN
+
+# FIX: Read from /dev/tty to get keyboard input when running via curl | bash
+read -p "Slab API Token: " SLAB_TOKEN < /dev/tty
 
 if [ -z "$SLAB_TOKEN" ]; then
     echo -e "${RED}✗${NC} No token provided. Exiting."
@@ -128,14 +131,14 @@ echo ""
 if pgrep -x "Claude" > /dev/null; then
     echo -e "${YELLOW}⚠${NC}  Claude is currently running!"
     echo ""
-    read -p "Quit Claude now? (y/n): " -n 1 -r
+    read -p "Quit Claude now? (y/n): " -n 1 -r < /dev/tty
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         osascript -e 'quit app "Claude"' 2>/dev/null || true
         echo "Waiting for Claude to quit..."
         sleep 3
         
-        read -p "Now open Claude? (y/n): " -n 1 -r
+        read -p "Now open Claude? (y/n): " -n 1 -r < /dev/tty
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             open -a "Claude" 2>/dev/null || echo "Please open Claude manually"
@@ -146,4 +149,4 @@ fi
 echo ""
 echo "Installation complete!"
 echo ""
-read -p "Press Enter to close..."
+read -p "Press Enter to close..." < /dev/tty
