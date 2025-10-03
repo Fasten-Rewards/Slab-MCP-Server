@@ -18,27 +18,25 @@ echo ""
 install_node_via_homebrew() {
     echo -e "${YELLOW}ℹ${NC} Installing Node.js via Homebrew..."
 
-    # Run brew in a subshell with clean stdin so it can't read the rest of the script
-    if /bin/bash -c "brew install node"; then
+    # Detach stdin completely and run in a subshell
+    if (brew install node </dev/null); then
         echo -e "${GREEN}✓${NC} Node.js installed successfully"
 
         if command -v node >/dev/null 2>&1; then
             NODE_VERSION=$(node --version 2>/dev/null)
             echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is ready"
             return 0
-        else
-            echo -e "${RED}✗${NC} Node.js installed but not found in PATH"
-            exit 1
         fi
-    else
-        echo -e "${RED}✗${NC} Failed to install Node.js via Homebrew"
-        echo ""
-        echo "Please try running manually:"
-        echo "  brew install node"
-        echo ""
-        echo "Then run this installer again."
-        exit 1
     fi
+
+    # Failed installation, give detailed instructions
+    echo -e "${RED}✗${NC} Failed to install Node.js via Homebrew"
+    echo ""
+    echo "Please try running manually:"
+    echo "  brew install node"
+    echo ""
+    echo "Then run this installer again."
+    exit 1
 }
 
 echo "Checking prerequisites..."
