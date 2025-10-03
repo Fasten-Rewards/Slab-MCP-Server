@@ -99,7 +99,7 @@ fi
 
 echo ""
 echo "Creating Slab configuration..."
-cat > "$CONFIG_FILE" << EOCONFIG
+cat > "$CONFIG_FILE" <<EOCONFIG
 {
   "mcpServers": {
     "slab": {
