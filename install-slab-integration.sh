@@ -18,11 +18,33 @@ echo ""
 # Function to install Homebrew
 install_homebrew() {
     echo -e "${YELLOW}ℹ${NC}  Installing Homebrew..."
+    echo ""
+    echo "The Homebrew installer will ask for your password."
+    echo "This is needed to install software on your Mac."
+    echo ""
+    
+    # First, ensure we have sudo access
+    echo "Please enter your password to continue:"
+    sudo -v
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}✗${NC} Cannot proceed without administrator access"
+        return 1
+    fi
+    
+    # Keep sudo alive during the installation
+    while true; do sudo -n true; sleep 60; kill -0 "$" || exit; done 2>/dev/null &
+    SUDO_PID=$!
     
     # Install Homebrew using the official installer
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/null
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
-    if [ $? -eq 0 ]; then
+    INSTALL_RESULT=$?
+    
+    # Stop the sudo keepalive
+    kill $SUDO_PID 2>/dev/null
+    
+    if [ $INSTALL_RESULT -eq 0 ]; then
         echo -e "${GREEN}✓${NC} Homebrew installed successfully"
         
         # Add Homebrew to PATH for current session
