@@ -17,11 +17,10 @@ echo ""
 
 install_node_via_homebrew() {
     echo -e "${YELLOW}ℹ${NC} Installing Node.js via Homebrew..."
-
+    
     # Detach stdin completely and run in a subshell
     if (brew install node </dev/null); then
         echo -e "${GREEN}✓${NC} Node.js installed successfully"
-
         if command -v node >/dev/null 2>&1; then
             NODE_VERSION=$(node --version 2>/dev/null)
             echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is ready"
@@ -46,34 +45,32 @@ if command -v node >/dev/null 2>&1; then
     NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
     echo -e "${GREEN}✓${NC} Node.js is installed (version $NODE_VERSION)"
 else
-    # Node not installed, check Homebrew
-    if ! command -v brew >/dev/null 2>&1; then
+    # Node is not installed, check for Homebrew
+    if command -v brew >/dev/null 2>&1; then
+        echo -e "${GREEN}✓${NC} Homebrew is installed"
+
+        # Automatically configure PATH dynamically
+        BREW_PATH=$(brew --prefix)
+        eval "$($BREW_PATH/bin/brew shellenv)" 2>/dev/null
+    else
         echo -e "${YELLOW}⚠${NC} Homebrew is not installed."
         echo ""
-        echo "Please install Homebrew manually before continuing:"
-        echo "  https://brew.sh"
+        echo "To install Homebrew, run the following command:"
         echo ""
+        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        echo ""
+        echo "After installing Homebrew, re-run this script."
         exit 1
-    else
-        echo -e "${GREEN}✓${NC} Homebrew is installed"
-        # Make sure Homebrew is in PATH
-        if [ -d "/opt/homebrew" ]; then
-            export PATH="/opt/homebrew/bin:$PATH"
-            eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null
-        else
-            export PATH="/usr/local/bin:$PATH"
-            eval "$(/usr/local/bin/brew shellenv)" 2>/dev/null
-        fi
+    fi
 
-        # Prompt to install Node
-        read -p "Install Node.js via Homebrew now? (y/n): " -n 1 -r < /dev/tty
-        echo ""
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            install_node_via_homebrew
-        else
-            echo -e "${RED}✗${NC} Node.js is required to proceed. Exiting."
-            exit 1
-        fi
+    # Prompt user to install Node via Homebrew
+    read -p "Install Node.js via Homebrew now? (y/n): " -n 1 -r < /dev/tty
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_node_via_homebrew
+    else
+        echo -e "${RED}✗${NC} Node.js is required to continue. Exiting."
+        exit 1
     fi
 fi
 
