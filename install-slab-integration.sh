@@ -15,22 +15,101 @@ echo "║     Simple Slab Integration Setup              ║"
 echo "╚════════════════════════════════════════════════╝"
 echo ""
 
-# Check if Node.js is available (but don't exit if not)
+# Function to install Node.js
+install_node() {
+    echo -e "${YELLOW}ℹ${NC}  Node.js is not installed. Installing now..."
+    
+    # Check if Homebrew is installed
+    if command -v brew >/dev/null 2>&1; then
+        echo "Using Homebrew to install Node.js..."
+        brew install node
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓${NC} Node.js installed successfully via Homebrew"
+            # Reload PATH
+            export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+            return 0
+        else
+            echo -e "${RED}✗${NC} Homebrew installation failed"
+        fi
+    fi
+    
+    # If Homebrew isn't available or failed, download directly
+    echo "Downloading Node.js LTS installer..."
+    
+    # Detect CPU architecture
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "arm64" ]; then
+        # Apple Silicon
+        PLATFORM="darwin-arm64"
+    else
+        # Intel
+        PLATFORM="darwin-x64"
+    fi
+    
+    # Use latest-lts symlink to always get current LTS
+    NODE_URL="https://nodejs.org/dist/latest-lts/node-latest-lts-$PLATFORM.tar.gz"
+    
+    # Download and extract to /usr/local
+    TEMP_DIR=$(mktemp -d)
+    cd "$TEMP_DIR"
+    
+    echo "Downloading latest Node.js LTS for $ARCH architecture..."
+    if curl -L -o node.tar.gz "$NODE_URL" --progress-bar; then
+        echo -e "${GREEN}✓${NC} Download complete"
+        
+        echo "Installing Node.js (you may be prompted for your password)..."
+        tar -xzf node.tar.gz
+        
+        # Get the extracted directory name (it varies with version)
+        NODE_DIR=$(tar -tzf node.tar.gz | head -1 | cut -f1 -d"/")
+        
+        # Install to /usr/local (requires sudo)
+        sudo cp -R "$NODE_DIR"/* /usr/local/
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓${NC} Node.js installed successfully"
+            cd - > /dev/null
+            rm -rf "$TEMP_DIR"
+            
+            # Update PATH
+            export PATH="/usr/local/bin:$PATH"
+            
+            # Verify installation
+            if command -v node >/dev/null 2>&1; then
+                NODE_VERSION=$(node --version 2>/dev/null)
+                echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is now installed"
+                return 0
+            fi
+        else
+            echo -e "${RED}✗${NC} Failed to install Node.js"
+            cd - > /dev/null
+            rm -rf "$TEMP_DIR"
+            return 1
+        fi
+    else
+        echo -e "${RED}✗${NC} Failed to download Node.js"
+        cd - > /dev/null
+        rm -rf "$TEMP_DIR"
+        return 1
+    fi
+}
+
+# Check if Node.js is available
 echo "Checking prerequisites..."
 if command -v node >/dev/null 2>&1; then
     NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
     echo -e "${GREEN}✓${NC} Node.js is installed (version $NODE_VERSION)"
 else
-    echo -e "${YELLOW}⚠${NC}  Node.js is not detected"
-    echo "   You'll need Node.js for the integration to work."
-    echo "   Install it from https://nodejs.org if you haven't already."
-    echo ""
-    # Fix for curl | bash - read from terminal
-    read -p "Continue anyway? (y/n): " -n 1 -r < /dev/tty
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installation cancelled."
-        exit 0
+    # Auto-install Node.js
+    install_node
+    
+    # Check again after installation
+    if ! command -v node >/dev/null 2>&1; then
+        echo -e "${RED}✗${NC} Node.js installation failed"
+        echo ""
+        echo "Please install Node.js manually from https://nodejs.org"
+        echo "Then run this installer again."
+        exit 1
     fi
 fi
 echo ""
