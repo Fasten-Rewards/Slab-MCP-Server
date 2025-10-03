@@ -41,16 +41,25 @@ install_node_via_homebrew() {
 
 echo "Checking prerequisites..."
 
-# Step 1: Check Homebrew
-if ! command -v brew >/dev/null 2>&1; then
-    echo -e "${RED}✗${NC} Homebrew is not installed"
-    echo ""
-    echo "Please install Homebrew manually before running this script:"
-    echo "  https://brew.sh"
-    echo ""
-    exit 1
+# Step 0: Check Node first
+if command -v node >/dev/null 2>&1; then
+    NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
+    echo -e "${GREEN}✓${NC} Node.js is already installed (version $NODE_VERSION)"
 else
-    echo -e "${GREEN}✓${NC} Homebrew is installed"
+    # Node not installed, check Homebrew
+    if ! command -v brew >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠${NC} Homebrew is not installed."
+        read -p "Install Homebrew now? Press Enter or type 'y' to continue: " -r < /dev/tty
+        if [[ -z "$REPLY" || "$REPLY" =~ ^[Yy]$ ]]; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        else
+            echo "Homebrew installation skipped. Cannot continue without Node.js. Exiting."
+            exit 1
+        fi
+    else
+        echo -e "${GREEN}✓${NC} Homebrew is installed"
+    fi
+
     # Make sure Homebrew is in PATH
     if [ -d "/opt/homebrew" ]; then
         export PATH="/opt/homebrew/bin:$PATH"
@@ -59,18 +68,20 @@ else
         export PATH="/usr/local/bin:$PATH"
         eval "$(/usr/local/bin/brew shellenv)" 2>/dev/null
     fi
-fi
 
-# Step 2: Check Node.js
-if ! command -v node >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠${NC} Node.js is not installed"
-    install_node_via_homebrew
-else
-    NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
-    echo -e "${GREEN}✓${NC} Node.js is installed (version $NODE_VERSION)"
+    # Prompt to install Node
+    echo -e "${YELLOW}⚠${NC} Node.js is not installed."
+    read -p "Install Node.js via Homebrew now? Press Enter or type 'y' to continue: " -r < /dev/tty
+    if [[ -z "$REPLY" || "$REPLY" =~ ^[Yy]$ ]]; then
+        install_node_via_homebrew
+    else
+        echo "Node.js installation skipped. Cannot continue without Node.js. Exiting."
+        exit 1
+    fi
 fi
 
 echo ""
+# --- The rest of your script remains unchanged ---
 
 # Step 3: Get Slab token
 echo "Enter your Slab API Token"
