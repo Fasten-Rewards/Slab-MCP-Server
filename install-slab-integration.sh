@@ -57,7 +57,7 @@ else
         echo ""
         echo "To install Homebrew, run the following command:"
         echo ""
-        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && eval "$($(test -d /opt/homebrew && echo /opt/homebrew/bin/brew || echo /usr/local/bin/brew) shellenv)"'
         echo ""
         echo "After installing Homebrew, re-run this script."
         exit 1
