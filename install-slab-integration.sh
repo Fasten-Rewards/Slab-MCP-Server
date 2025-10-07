@@ -15,27 +15,39 @@ echo "║     Simple Slab Integration Setup              ║"
 echo "╚════════════════════════════════════════════════╝"
 echo ""
 
-install_node_via_homebrew() {
-    echo -e "${YELLOW}ℹ${NC} Installing Node.js via Homebrew..."
-    
-    # Detach stdin completely and run in a subshell
-    if (brew install node </dev/null); then
-        echo -e "${GREEN}✓${NC} Node.js installed successfully"
-        if command -v node >/dev/null 2>&1; then
-            NODE_VERSION=$(node --version 2>/dev/null)
-            echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is ready"
-            return 0
-        fi
+install_node_via_nvm() {
+    echo -e "${YELLOW}ℹ${NC} Installing Node.js via NVM..."
+
+    # Install NVM (Node Version Manager)
+    if ! command -v nvm >/dev/null 2>&1; then
+        echo -e "${YELLOW}ℹ${NC} Installing NVM..."
+        export NVM_DIR="$HOME/.nvm"
+        mkdir -p "$NVM_DIR"
+        curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+        # Load NVM immediately
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    else
+        echo -e "${GREEN}✓${NC} NVM is already installed"
     fi
 
-    # Failed installation, give detailed instructions
-    echo -e "${RED}✗${NC} Failed to install Node.js via Homebrew"
-    echo ""
-    echo "Please try running manually:"
-    echo "  brew install node"
-    echo ""
-    echo "Then run this installer again."
-    exit 1
+    # Install latest LTS Node version
+    if (nvm install --lts </dev/null); then
+        echo -e "${GREEN}✓${NC} Node.js installed successfully"
+        NODE_VERSION=$(node --version 2>/dev/null)
+        echo -e "${GREEN}✓${NC} Node.js $NODE_VERSION is ready"
+    else
+        echo -e "${RED}✗${NC} Failed to install Node.js via NVM"
+        echo ""
+        echo "Please try running manually:"
+        echo "  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
+        echo "  source ~/.nvm/nvm.sh"
+        echo "  nvm install --lts"
+        echo ""
+        echo "Then run this installer again."
+        exit 1
+    fi
 }
 
 echo "Checking prerequisites..."
@@ -45,33 +57,21 @@ if command -v node >/dev/null 2>&1; then
     NODE_VERSION=$(node --version 2>/dev/null || echo "unknown")
     echo -e "${GREEN}✓${NC} Node.js is installed (version $NODE_VERSION)"
 else
-    # Node is not installed, check for Homebrew
-    if command -v brew >/dev/null 2>&1; then
-        echo -e "${GREEN}✓${NC} Homebrew is installed"
-
-        # Automatically configure PATH dynamically
-        BREW_PATH=$(brew --prefix)
-        eval "$($BREW_PATH/bin/brew shellenv)" 2>/dev/null
-    else
-        echo -e "${YELLOW}⚠${NC} Homebrew is not installed."
-        echo ""
-        echo "To install Homebrew, run the following command:"
-        echo ""
-        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && eval "$($(test -d /opt/homebrew && echo /opt/homebrew/bin/brew || echo /usr/local/bin/brew) shellenv)"'
-        echo ""
-        echo "After installing Homebrew, re-run this script."
-        exit 1
-    fi
-
-    # Prompt user to install Node via Homebrew
-    read -p "Install Node.js via Homebrew now? (y/n): " -n 1 -r < /dev/tty
+    echo -e "${YELLOW}⚠${NC} Node.js is not installed."
+    read -p "Install Node.js automatically? (y/n): " -n 1 -r < /dev/tty
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        install_node_via_homebrew
+        install_node_via_nvm
     else
         echo -e "${RED}✗${NC} Node.js is required to continue. Exiting."
         exit 1
     fi
+fi
+
+# Ensure node and npx are available
+if ! command -v node >/dev/null 2>&1; then
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 fi
 
 echo ""
