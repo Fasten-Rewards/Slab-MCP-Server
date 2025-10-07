@@ -139,14 +139,14 @@ fi
 # Step 4: Final instructions
 echo ""
 echo "╔════════════════════════════════════════════════╗"
-echo "║            ✅ Setup Complete!                   ║"
+echo "║              Setup Complete!                   ║"
 echo "╚════════════════════════════════════════════════╝"
 echo ""
 echo "IMPORTANT - Next steps:"
 echo "1. FULLY QUIT Claude Desktop (Cmd+Q)"
 echo "2. Wait 5 seconds"
 echo "3. Open Claude Desktop again"
-echo "4. Test by asking Claude: 'Can you search Slab for documentation?'"
+echo "4. Test by asking Claude: 'Can you find our UAT url in Slab?'"
 echo ""
 
 if pgrep -x "Claude" > /dev/null; then
